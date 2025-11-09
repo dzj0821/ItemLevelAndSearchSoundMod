@@ -4,7 +4,7 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <Nullable>enable</Nullable>
     <DuckovPath>E:\SteamLibrary\steamapps\common\Escape from Duckov</DuckovPath>
-    <FileVersion>1.6.3</FileVersion>
+    <FileVersion>1.7.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Duckov;
 using Duckov.UI;
 using Duckov.UI.Animations;
 using FMOD;
@@ -18,8 +17,8 @@ namespace ItemLevelAndSearchSoundMod
     public class PatchItemDisplaySetup
     {
         private static HashSet<ItemDisplay> updatedAnimationItemDisplays = new HashSet<ItemDisplay>();
-        private static Dictionary<Item, ItemDisplay> ItemDisplayMap = new Dictionary<Item, ItemDisplay>();
-        
+        public static Dictionary<Item, ItemDisplay> ItemDisplayMap = new Dictionary<Item, ItemDisplay>();
+
         static void Postfix(ItemDisplay __instance, Item target)
         {
             if (__instance == null)
@@ -32,11 +31,6 @@ namespace ItemLevelAndSearchSoundMod
                 SetColor(__instance, Util.GetItemValueLevelColor(ItemValueLevel.White));
                 return;
             }
-
-            // 情况1. 在搜索中关闭了容器，之后再打开容器，OnInspectionStateChanged事件未消耗
-            // 情况2. 自动拾取Mod会在不触发onInspectionStateChanged的情况下拾取道具，Item会回到对象池，事件就会留到下次触发
-            target.onInspectionStateChanged -= OnInspectionStateChanged;
-            ItemDisplayMap.Remove(target);
 
             if (!updatedAnimationItemDisplays.Contains(__instance))
             {
@@ -54,10 +48,8 @@ namespace ItemLevelAndSearchSoundMod
 
             if (target.InInventory != null && target.InInventory.NeedInspection && !target.Inspected)
             {
-                // 物品还未搜索的情况
-                target.onInspectionStateChanged += OnInspectionStateChanged;
                 ItemDisplayMap[target] = __instance;
-
+                // 物品还未搜索的情况
                 SetColor(__instance, Util.GetItemValueLevelColor(ItemValueLevel.White));
                 return;
             }
@@ -69,7 +61,7 @@ namespace ItemLevelAndSearchSoundMod
 
         public static void OnInspectionStateChanged(Item item)
         {
-            if (!ItemDisplayMap.TryGetValue(item, out ItemDisplay itemDisplay))
+            if (!ItemDisplayMap.TryGetValue(item, out ItemDisplay itemDisplay) || itemDisplay.Target != item)
             {
                 return;
             }
@@ -87,11 +79,20 @@ namespace ItemLevelAndSearchSoundMod
                 }
                 if (ModBehaviour.ItemValueLevelSound.TryGetValue(playSoundLevel, out Sound sound))
                 {
-                    RESULT result = FMODUnity.RuntimeManager.CoreSystem.playSound(sound, ModBehaviour.SfxGroup, false, out Channel channel);
-                    if (result != RESULT.OK)
+                    RESULT sfxGroupResult = FMODUnity.RuntimeManager.GetBus("bus:/Master/SFX").getChannelGroup(out ChannelGroup sfxGroup);
+                    if (sfxGroupResult == RESULT.OK)
                     {
-                        ModBehaviour.ErrorMessage += "FMOD failed to play sound: " + result + "\n";
+                        RESULT result = FMODUnity.RuntimeManager.CoreSystem.playSound(sound, sfxGroup, false, out Channel channel);
+                        if (result != RESULT.OK)
+                        {
+                            ModBehaviour.ErrorMessage += $"FMOD failed to play sound: {result}\n";
+                        }
                     }
+                    else
+                    {
+                        UnityEngine.Debug.LogError("ItemLevelAndSearchSoundMod FMOD failed to get sfx group: " + sfxGroupResult);
+                    }
+                    
                 }
                 else
                 {

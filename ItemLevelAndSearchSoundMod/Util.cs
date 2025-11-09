@@ -1,5 +1,7 @@
+using System;
 using ItemStatsSystem;
 using UnityEngine;
+using static ItemStatsSystem.ItemAssetsCollection;
 
 namespace ItemLevelAndSearchSoundMod
 {
@@ -13,6 +15,11 @@ namespace ItemLevelAndSearchSoundMod
             }
             // 除2得到售价
             float value = item.Value / 2f;
+
+            if (ModBehaviour.DynamicEntryMap.TryGetValue(item.TypeID, out DynamicEntry _))
+            {
+                return ParseQuality(item.Quality);
+            }
 
             if (item.Tags.Contains("Bullet"))
             {
@@ -171,6 +178,12 @@ namespace ItemLevelAndSearchSoundMod
                 default:
                     return ItemValueLevel.White;
             }
+        }
+
+        public static ItemValueLevel ParseQuality(int quality)
+        {
+            int index = Math.Clamp(quality - 1, 0, Enum.GetValues(typeof(ItemValueLevel)).Length - 1);
+            return (ItemValueLevel) index;
         }
 
         public static Color GetItemValueLevelColor(ItemValueLevel level)
