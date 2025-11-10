@@ -18,6 +18,10 @@ namespace ItemLevelAndSearchSoundMod
 
             if (ModBehaviour.DynamicEntryMap.TryGetValue(item.TypeID, out DynamicEntry _))
             {
+                if (item.DisplayQuality != DisplayQuality.None)
+                {
+                    return ParseDisplayQuality(item);
+                }
                 return ParseQuality(item.Quality);
             }
 
@@ -32,7 +36,7 @@ namespace ItemLevelAndSearchSoundMod
                         return ItemValueLevel.LightRed;
                     }
                     // 有官方稀有度的子弹，使用官方的稀有度
-                    return ParseDisplayQuality(item.DisplayQuality);
+                    return ParseDisplayQuality(item);
                 }
 
                 if (item.Quality == 1)
@@ -95,7 +99,7 @@ namespace ItemLevelAndSearchSoundMod
                     return (ItemValueLevel) (item.Quality - 1);
                 }
 
-                return ParseDisplayQuality(item.DisplayQuality);
+                return ParseDisplayQuality(item);
             }
 
             if (item.TypeID == 862 || item.TypeID == 1238)
@@ -108,7 +112,7 @@ namespace ItemLevelAndSearchSoundMod
             ItemValueLevel itemValueLevel = CalculateItemValueLevel((int)value);
 
             // 官方的物品稀有度和物品价值取最大值
-            ItemValueLevel displayQuality = ParseDisplayQuality(item.DisplayQuality);
+            ItemValueLevel displayQuality = ParseDisplayQuality(item);
 
             if (displayQuality > itemValueLevel)
             {
@@ -156,9 +160,9 @@ namespace ItemLevelAndSearchSoundMod
             }
         }
 
-        public static ItemValueLevel ParseDisplayQuality(DisplayQuality displayQuality)
+        public static ItemValueLevel ParseDisplayQuality(Item item)
         {
-            switch (displayQuality)
+            switch (item.DisplayQuality)
             {
                 case DisplayQuality.None:
                 case DisplayQuality.White:
@@ -172,6 +176,11 @@ namespace ItemLevelAndSearchSoundMod
                 case DisplayQuality.Orange:
                     return ItemValueLevel.Orange;
                 case DisplayQuality.Red:
+                    if (item.Quality == 6)
+                    {
+                        return ItemValueLevel.LightRed;
+                    }
+                    return ItemValueLevel.Red;
                 case DisplayQuality.Q7:
                 case DisplayQuality.Q8:
                     return ItemValueLevel.Red;
