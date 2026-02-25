@@ -140,7 +140,7 @@ namespace ItemLevelAndSearchSoundMod
 
         private void OnStartLoot(InteractableLootbox lootbox)
         {
-            if (!lootbox.Inventory.NeedInspection || lootbox.Inventory.Content.All(item => item == null || item.Inspected))
+            if (lootbox == null || lootbox.Inventory == null || !lootbox.Inventory.NeedInspection)
             {
                 return;
             }
@@ -153,16 +153,36 @@ namespace ItemLevelAndSearchSoundMod
                 item.onInspectionStateChanged += PatchItemDisplaySetup.OnInspectionStateChanged;
                 inspectingItems.Add(item);
             }
+            lootbox.Inventory.onContentChanged += OnContentChanged;
         }
 
         private void OnStopLoot(InteractableLootbox lootbox)
         {
+            if (lootbox != null && lootbox.Inventory != null)
+            {
+                lootbox.Inventory.onContentChanged -= OnContentChanged;
+            }
             foreach (var item in inspectingItems)
             {
                 item.onInspectionStateChanged -= PatchItemDisplaySetup.OnInspectionStateChanged;
                 PatchItemDisplaySetup.ItemDisplayMap.Remove(item);
             }
             inspectingItems.Clear();
+        }
+
+        private void OnContentChanged(Inventory inventory, int position)
+        {
+            if (position >= inventory.Content.Count)
+            {
+                return;
+            }
+            Item item = inventory.Content[position];
+            if (item == null || item.Inspected)
+            {
+                return;
+            }
+            item.onInspectionStateChanged += PatchItemDisplaySetup.OnInspectionStateChanged;
+            inspectingItems.Add(item);
         }
 
         private void OnGUI()
